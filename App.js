@@ -4,6 +4,7 @@ import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PokemonProvider, usePokemons } from './PokemonContext';
+import { EventosProvider, useEventos } from './EventosContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const usersDatabase = [
@@ -172,6 +173,7 @@ export default function App() {
 
   return (
     <PokemonProvider>
+      <EventosProvider>
       <NavigationContainer>
         {isLoggedIn ? (
           <MyTabs />
@@ -179,6 +181,7 @@ export default function App() {
           <LoginNavigator onLogin={handleLogin} />
         )}
       </NavigationContainer>
+      </EventosProvider>
     </PokemonProvider>
   );
 }
@@ -194,17 +197,28 @@ function ScreenA1() {
       <Text style={styles.description}>
         App hecha para ver tus pokemons favoritos
       </Text>
-      <Button title="Ver creadores" onPress={() => navigation.navigate('ScreenA2')} />
+      <Button title="Ver Eventos" onPress={() => navigation.navigate('ScreenA2')} />
     </View>
   );
 }
 
 function ScreenA2() {
+  const { eventos, loading } = useEventos();
   const navigation = useNavigation();
+
+  if (loading) {
+    return <Text style={styles.text}>Loading...</Text>;
+  }
   return (
-    <View style={styles.homeScreen}>
-      <Text style={styles.text}>Mateo Cottet Y Thiago Lewin</Text>
-      <Button title="Ir A Home" onPress={() => navigation.navigate('ScreenA1')} />
+    <View style={styles.searchScreen}>
+      <Text style={styles.text}>
+        {eventos && eventos.length > 0
+          ? eventos.map(item => item).join(', ')
+          : "No Event data available"}
+      </Text>
+      <TouchableOpacity onPress={() => alert('Presionaste en el Icono!')}>
+        <Ionicons name="search" size={50} color="white" />
+      </TouchableOpacity>
     </View>
   );
 }

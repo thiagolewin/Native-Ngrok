@@ -1,10 +1,187 @@
 import * as React from 'react';
-import { Button, TextInput, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Button, TextInput, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PokemonProvider, usePokemons } from './PokemonContext';
 import { Ionicons } from '@expo/vector-icons';
+
+const usersDatabase = [
+  { username: 'user1', password: 'pass1' },
+  { username: 'user2', password: 'pass2' },
+];
+
+//
+// Pantalla de Login
+//
+function LoginScreen({ onLogin }) {
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleLoginPress = () => {
+    onLogin(username, password);
+  };
+
+  return (
+    <View style={styles.perfilScreen}>
+      <Text style={styles.text}>Login</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your name"
+        value={username}
+        onChangeText={setUsername}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button title="Login" onPress={handleLoginPress} />
+    </View>
+  );
+}
+
+//
+// Creación de los stacks
+//
+const Login = createNativeStackNavigator();
+const StackA = createNativeStackNavigator();
+const StackB = createNativeStackNavigator();
+const StackC = createNativeStackNavigator();
+
+function LoginNavigator({ onLogin }) {
+  return (
+    <Login.Navigator>
+      <Login.Screen name="login1">
+        {(props) => <LoginScreen {...props} onLogin={onLogin} />}
+      </Login.Screen>
+    </Login.Navigator>
+  );
+}
+
+function StackANavigator() {
+  return (
+    <StackA.Navigator>
+      <StackA.Screen name="ScreenA1" component={ScreenA1} />
+      <StackA.Screen name="ScreenA2" component={ScreenA2} />
+    </StackA.Navigator>
+  );
+}
+
+function StackBNavigator() {
+  return (
+    <StackB.Navigator>
+      <StackB.Screen name="ScreenB1" component={ScreenB1} />
+      <StackB.Screen name="ScreenB2" component={ScreenB2} />
+    </StackB.Navigator>
+  );
+}
+
+function StackCNavigator() {
+  return (
+    <StackC.Navigator>
+      <StackC.Screen 
+        name="ScreenC1" 
+        component={ScreenC1} 
+        options={{ 
+          title: 'Otro Titulo',
+          headerStyle: { backgroundColor: 'purple' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold' },
+          headerTitleAlign: 'center',
+          headerRight: () => (
+            <Button
+              onPress={() => alert('Hice Click!!')}
+              title="Info"
+              color="#00cc00"
+            />
+          ),
+          headerTransparent: true 
+        }}
+      />
+      <StackC.Screen 
+        name="ScreenC2" 
+        component={ScreenC2} 
+        options={{ 
+          headerShown: false
+        }}
+      />
+    </StackC.Navigator>
+  );
+}
+
+//
+// Creación del BottomTabNavigator
+//
+const Tab = createBottomTabNavigator();
+function MyTabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen 
+        name="Home" 
+        component={StackANavigator} 
+      />
+      <Tab.Screen 
+        name="Buscador" 
+        component={StackBNavigator} 
+      />
+      <Tab.Screen 
+        name="Perfil" 
+        component={StackCNavigator} 
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={24} color={color} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+//
+// Envolviendo la aplicación en el NavigationContainer
+//
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  const handleLogin = async (username, password) => {
+    try {
+      const response = await fetch('https://grateful-boar-definitely.ngrok-free.app/api/user/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success == true) {
+        // Manejar el éxito (por ejemplo, navegación a la pantalla principal)
+        setIsLoggedIn(true);
+      } else {
+        // Manejar el error (por ejemplo, mostrar mensaje de error)
+        Alert.alert('Login failed', data.message || 'Something went wrong');
+      }
+    } catch (error) {
+      Alert.alert('Login failed', 'An error occurred. Please try again.');
+    }
+  }
+
+  return (
+    <PokemonProvider>
+      <NavigationContainer>
+        {isLoggedIn ? (
+          <MyTabs />
+        ) : (
+          <LoginNavigator onLogin={handleLogin} />
+        )}
+      </NavigationContainer>
+    </PokemonProvider>
+  );
+}
 
 //
 // Screens del Primer Stack
@@ -12,13 +189,13 @@ import { Ionicons } from '@expo/vector-icons';
 function ScreenA1() {
   const navigation = useNavigation();
   return (
-     <View style={styles.homeScreen}>
-     <Text style={styles.text}>Pokemon Home</Text>
-     <Text style={styles.description}>
-       App hecha para ver tus pokemons favoritos
-     </Text>
-     <Button title="Ver creadores" onPress={() => navigation.navigate('ScreenA2')} />
-   </View>
+    <View style={styles.homeScreen}>
+      <Text style={styles.text}>Pokemon Home</Text>
+      <Text style={styles.description}>
+        App hecha para ver tus pokemons favoritos
+      </Text>
+      <Button title="Ver creadores" onPress={() => navigation.navigate('ScreenA2')} />
+    </View>
   );
 }
 
@@ -26,9 +203,9 @@ function ScreenA2() {
   const navigation = useNavigation();
   return (
     <View style={styles.homeScreen}>
-    <Text style={styles.text}>Mateo Cottet Y Thiago Lewin</Text>
-    <Button title="Ir A Home" onPress={() => navigation.navigate('ScreenA1')} />
-  </View>
+      <Text style={styles.text}>Mateo Cottet Y Thiago Lewin</Text>
+      <Button title="Ir A Home" onPress={() => navigation.navigate('ScreenA1')} />
+    </View>
   );
 }
 
@@ -38,8 +215,7 @@ function ScreenA2() {
 function ScreenB1() {
   const { pokemons, loading } = usePokemons();
   const navigation = useNavigation();
-  console.log(usePokemons())
-  console.log(pokemons,loading)
+
   if (loading) {
     return <Text style={styles.text}>Loading...</Text>;
   }
@@ -66,7 +242,7 @@ function ScreenB2({ route }) {
     <View style={styles.searchScreen}>
       <Text style={styles.text}>Pokemon</Text>
       <Text style={styles.text}>Nombre: {itemId.name}</Text>
-      <Button title="Todos los pokemons" onPress={() => navigation.navigate('ScreenB1')} /> 
+      <Button title="Todos los pokemons" onPress={() => navigation.navigate('ScreenB1')} />
     </View>
   );
 }
@@ -121,133 +297,14 @@ function ScreenC2() {
 }
 
 //
-// Creación de los stacks
+// Estilos
 //
-const StackA = createNativeStackNavigator();
-const StackB = createNativeStackNavigator();
-const StackC = createNativeStackNavigator();
-
-function StackANavigator() {
-  return (
-    <StackA.Navigator>
-      <StackA.Screen name="ScreenA1" component={ScreenA1} />
-      <StackA.Screen name="ScreenA2" component={ScreenA2} />
-    </StackA.Navigator>
-  );
-}
-
-function StackBNavigator() {
-  return (
-    <StackB.Navigator>
-      <StackB.Screen name="ScreenB1" component={ScreenB1} />
-      <StackB.Screen name="ScreenB2" component={ScreenB2} />
-    </StackB.Navigator>
-  );
-}
-
-
-function StackCNavigator() {
-  return (
-    <StackC.Navigator>
-      <StackC.Screen 
-        name="ScreenC1" 
-        component={ScreenC1} 
-        options={{ 
-          //title: Cambia el título que aparece en el encabezado de la pantalla.
-          title: 'Otro Titulo',
-          //headerStyle: Personaliza el estilo del encabezado, como el color de fondo.
-          headerStyle: { backgroundColor: 'purple' },
-          //headerTintColor: Cambia el color del texto y los íconos del encabezado.
-          headerTintColor: '#fff',
-          //headerTitleStyle: Cambia el estilo del título del encabezado, como la fuente y el tamaño del texto.
-          headerTitleStyle: { fontWeight: 'bold' } ,
-          //headerTitleAlign: Alinea el título del encabezado al centro o a la izquierda.
-          headerTitleAlign: 'center',
-          //headerRight: Agrega un componente personalizado en la esquina superior derecha del encabezado.
-          //headerLeft.. lo mismo
-          headerRight: () => (
-            <Button
-              onPress={() => alert('Hice Click!!')}
-              title="Info"
-              color="#00cc00"
-            />
-          ),
-          //headerTransparent: Hace que el encabezado sea transparente.
-          headerTransparent: true 
-         }}
-      />
-
-      <StackC.Screen 
-        name="ScreenC2" 
-        component={ScreenC2} 
-        options={{ 
-          //headerShown: Muestra u oculta el encabezado de la pantalla.
-          headerShown: false
-         }}
-        />
-    </StackC.Navigator>
-  );
-}
-
-//
-// Creación del BottomTabNavigator
-//
-const Tab = createBottomTabNavigator();
-function MyTabs() {
-  return (
-    <Tab.Navigator>
-      <Tab.Screen 
-        name="Home" 
-        component={StackANavigator} 
-        /*options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="home" size={24} color={color} />
-          ),
-        }}*/
-      />
-      <Tab.Screen 
-        name="Buscador" 
-        component={StackBNavigator} 
-        /*options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="search" size={24} color={color} />
-          ),
-        }}*/
-      />
-      <Tab.Screen 
-        name="Perfil" 
-        component={StackCNavigator} 
-        options={{
-          // title: 'Perfil', // Lo pone en todos! 
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person" size={24} color={color} />
-            // name = "person", "search", "home"
-          ),
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
-
-//
-// Envolviendo la aplicación en el NavigationContainer
-//
-export default function App() {
-  return (
-    <PokemonProvider>
-    <NavigationContainer>
-      <MyTabs />
-    </NavigationContainer>
-  </PokemonProvider>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black', // Fondo negro para contrastar el texto blanco
+    backgroundColor: 'black',
   },
   text: {
     color: 'white',
@@ -260,14 +317,12 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 20,
   },
-  
   homeScreen: { 
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center', 
     backgroundColor:'#ff0000' 
   },
-  
   searchScreen: { 
     flex: 1, 
     justifyContent: 'center', 
